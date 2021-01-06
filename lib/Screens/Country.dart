@@ -1,3 +1,4 @@
+import 'package:country_house/Screens/CountryMap.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -50,7 +51,15 @@ class Country extends StatelessWidget {
               ),
               direction: FlipDirection.VERTICAL,
             ),
-            CardWidget(title: 'Show on map'),
+            GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (ctx) => CountryMap(),
+                    ),
+                  );
+                },
+                child: CardWidget(title: 'Show on map')),
           ],
         ),
       ),

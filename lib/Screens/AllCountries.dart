@@ -8,17 +8,31 @@ class AllCountries extends StatefulWidget {
 }
 
 class _AllCountriesState extends State<AllCountries> {
-  Future<List> countries;
+  List countries = [];
+  List filterCountries = [];
+  bool ifSearching = false;
 
-  Future<List> getCountries() async {
+  getCountries() async {
     var response = await Dio().get('https://restcountries.eu/rest/v2/all');
     return response.data;
   }
 
   @override
   void initState() {
-    countries = getCountries();
+    getCountries().then((data) {
+      setState(() {
+        countries = filterCountries = data;
+      });
+    });
     super.initState();
+  }
+
+  void _filterCounters(String value) {
+    setState(() {
+      filterCountries = countries
+          .where((Country) => Country['name'].toLowerCase().contains(value.toLowerCase()))
+          .toList();
+    });
   }
 
   @override
@@ -26,23 +40,50 @@ class _AllCountriesState extends State<AllCountries> {
     getCountries();
     return Scaffold(
       appBar: AppBar(
-        title: Text("Countries"),
-        actions: [IconButton(icon: Icon(Icons.search), onPressed: () {})],
+        title: !ifSearching
+            ? Text("All Countries")
+            : TextField(
+                onChanged: (value) {
+                  _filterCounters(value);
+                },
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Search Country name',
+                  hintStyle: TextStyle(color: Colors.white),
+                  icon: Icon(Icons.search, color: Colors.white),
+                ),
+              ),
+        actions: [
+          ifSearching
+              ? IconButton(
+                  icon: Icon(Icons.cancel),
+                  onPressed: () {
+                    setState(() {
+                      this.ifSearching = false;
+                      filterCountries = countries;
+                    });
+                  })
+              : IconButton(
+                  icon: Icon(Icons.search),
+                  onPressed: () {
+                    setState(() {
+                      this.ifSearching = true;
+                    });
+                  })
+        ],
       ),
       body: Container(
         padding: EdgeInsets.all(10),
-        child: FutureBuilder<List>(
-          future: countries, // async work
-          builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
-            if (snapshot.hasData) {
-              return ListView.builder(
+        child: filterCountries.length > 0
+            ? ListView.builder(
+                itemCount: filterCountries.length,
                 itemBuilder: (BuildContext cotext, int index) {
                   return GestureDetector(
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (context) {
-                            return Country(snapshot.data[index]);
+                            return Country(filterCountries[index]);
                           },
                         ),
                       );
@@ -54,17 +95,15 @@ class _AllCountriesState extends State<AllCountries> {
                         padding: const EdgeInsets.symmetric(
                             vertical: 10, horizontal: 8),
                         child: Text(
-                          snapshot.data[index]['name'],
+                          filterCountries[index]['name'],
                           style: TextStyle(fontSize: 18),
                         ),
                       ),
                     ),
                   );
                 },
-              );
-            }
-          },
-        )
+              )
+            : Center(child: CircularProgressIndicator()),
         /* ListView(
           children: <Widget>[
             GestureDetector(
@@ -115,7 +154,6 @@ class _AllCountriesState extends State<AllCountries> {
             ),
           ],
         )*/
-        ,
       ),
     );
   }
